@@ -140,6 +140,206 @@ func TestStorePreservesExplicitListName(t *testing.T) {
 	}
 }
 
+func TestStoreCreatesItemAndReturnsPendingItems(t *testing.T) {
+	db := openTestStore(t)
+
+	dueAt := time.Date(2026, 6, 16, 20, 0, 0, 0, time.FixedZone("PDT", -7*60*60))
+	notes := "spoken through kitchen Echo"
+	priority := "normal"
+	resp, err := db.CreateItem(models.CreateItemRequest{
+		RevinderID: "alexa-request-1",
+		Source:     "alexa",
+		Type:       "task",
+		Text:       "on Tuesday at 8pm do that one thing",
+		Title:      "do that one thing",
+		Notes:      &notes,
+		DueAt:      &dueAt,
+		Priority:   &priority,
+		ListName:   "Home",
+		Tags:       []string{"home", "cottage"},
+		Metadata: map[string]any{
+			"device": "kitchen",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.ID != 1 {
+		t.Fatalf("ID = %d, want %d", resp.ID, 1)
+	}
+	if resp.Status != "pending" {
+		t.Fatalf("Status = %q, want %q", resp.Status, "pending")
+	}
+
+	items, err := db.PendingItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("len(items) = %d, want %d", len(items), 1)
+	}
+
+	item := items[0]
+	if item.RevinderID != "alexa-request-1" {
+		t.Fatalf("RevinderID = %q, want %q", item.RevinderID, "alexa-request-1")
+	}
+	if item.Source != "alexa" {
+		t.Fatalf("Source = %q, want %q", item.Source, "alexa")
+	}
+	if item.Type != "task" {
+		t.Fatalf("Type = %q, want %q", item.Type, "task")
+	}
+	if item.Text != "on Tuesday at 8pm do that one thing" {
+		t.Fatalf("Text = %q, want %q", item.Text, "on Tuesday at 8pm do that one thing")
+	}
+	if item.Title != "do that one thing" {
+		t.Fatalf("Title = %q, want %q", item.Title, "do that one thing")
+	}
+	if item.Notes == nil || *item.Notes != notes {
+		t.Fatalf("Notes = %v, want %q", item.Notes, notes)
+	}
+	if item.DueAt == nil || !item.DueAt.Equal(dueAt) {
+		t.Fatalf("DueAt = %v, want %v", item.DueAt, dueAt)
+	}
+	if item.Priority == nil || *item.Priority != priority {
+		t.Fatalf("Priority = %v, want %q", item.Priority, priority)
+	}
+	if item.ListName != "Home" {
+		t.Fatalf("ListName = %q, want %q", item.ListName, "Home")
+	}
+	if len(item.Tags) != 2 || item.Tags[0] != "home" || item.Tags[1] != "cottage" {
+		t.Fatalf("Tags = %v, want %v", item.Tags, []string{"home", "cottage"})
+	}
+	if item.Metadata["device"] != "kitchen" {
+		t.Fatalf("Metadata = %v, want device kitchen", item.Metadata)
+	}
+	if item.Status != "pending" {
+		t.Fatalf("Status = %q, want %q", item.Status, "pending")
+	}
+	if item.CreatedAt.IsZero() {
+		t.Fatal("CreatedAt is zero")
+	}
+}
+
+func TestStoreCreateItemReturnsExistingItemForDuplicateRevinderID(t *testing.T) {
+	db := openTestStore(t)
+
+	first, err := db.CreateItem(models.CreateItemRequest{
+		RevinderID: "alexa-request-1",
+		Source:     "alexa",
+		Type:       "task",
+		Text:       "replace air filter",
+		Title:      "replace air filter",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	second, err := db.CreateItem(models.CreateItemRequest{
+		RevinderID: "alexa-request-1",
+		Source:     "alexa",
+		Type:       "task",
+		Text:       "replace furnace filter",
+		Title:      "replace furnace filter",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if second.ID != first.ID {
+		t.Fatalf("duplicate ID = %d, want %d", second.ID, first.ID)
+	}
+	if second.Status != first.Status {
+		t.Fatalf("duplicate Status = %q, want %q", second.Status, first.Status)
+	}
+
+	items, err := db.PendingItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("len(items) = %d, want %d", len(items), 1)
+	}
+	if items[0].Text != "replace air filter" {
+		t.Fatalf("Text = %q, want %q", items[0].Text, "replace air filter")
+	}
+}
+
+func TestStoreMarkItemProcessedRemovesItemFromPending(t *testing.T) {
+	db := openTestStore(t)
+
+	resp, err := db.CreateItem(models.CreateItemRequest{
+		Source: "alexa",
+		Type:   "task",
+		Text:   "replace air filter",
+		Title:  "replace air filter",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := db.MarkItemProcessed(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !updated {
+		t.Fatal("updated = false, want true")
+	}
+
+	items, err := db.PendingItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("len(items) = %d, want %d", len(items), 0)
+	}
+
+	item, found, err := db.GetItem(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Fatal("found = false, want true")
+	}
+	if item.Status != "processed" {
+		t.Fatalf("Status = %q, want %q", item.Status, "processed")
+	}
+	if item.ProcessedAt == nil {
+		t.Fatal("ProcessedAt = nil, want timestamp")
+	}
+}
+
+func TestStoreDeleteItem(t *testing.T) {
+	db := openTestStore(t)
+
+	resp, err := db.CreateItem(models.CreateItemRequest{
+		Source: "alexa",
+		Type:   "note",
+		Text:   "remember the battery was replaced",
+		Title:  "remember the battery was replaced",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	deleted, err := db.DeleteItem(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !deleted {
+		t.Fatal("deleted = false, want true")
+	}
+
+	_, found, err := db.GetItem(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found {
+		t.Fatal("found = true, want false")
+	}
+}
+
 func TestStoreMarkSyncedRemovesTaskFromPending(t *testing.T) {
 	db := openTestStore(t)
 

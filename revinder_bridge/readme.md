@@ -1,6 +1,6 @@
 # revinder_bridge
 
-revinder_bridge is a self-hosted task capture service. The first milestone is a Go API with a SQLite backend.
+revinder_bridge is a self-hosted natural-language capture service with a Go API and SQLite backend.
 
 ## Current State
 
@@ -8,6 +8,8 @@ revinder_bridge currently provides:
 
 - A Cobra CLI with a `serve` command
 - A Chi-based JSON HTTP API
+- Generic item capture endpoints
+- Legacy task endpoints
 - A SQLite backend using `github.com/mattn/go-sqlite3`
 - Automatic config creation
 - Automatic SQLite schema creation
@@ -88,7 +90,111 @@ Response:
 }
 ```
 
-### Create Task
+### Create Item
+
+```http
+POST /api/items
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "revinder_id": "alexa-request-1",
+  "source": "alexa",
+  "type": "task",
+  "text": "on Tuesday at 8pm do that one thing",
+  "title": "do that one thing",
+  "notes": null,
+  "due_at": "2026-06-16T20:00:00-07:00",
+  "priority": null,
+  "list_name": "Home",
+  "tags": ["home", "cottage"],
+  "metadata": {
+    "due_date": "2026-06-16",
+    "due_time": "20:00",
+    "all_day": false
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "status": "pending"
+}
+```
+
+If `revinder_id` is supplied and already exists, the existing item id and status are returned instead of creating a duplicate item.
+
+### Get Items
+
+```http
+GET /api/items
+Authorization: Bearer <token>
+```
+
+Optional status filter:
+
+```http
+GET /api/items?status=pending
+```
+
+### Get Pending Items
+
+```http
+GET /api/items/pending
+Authorization: Bearer <token>
+```
+
+Returns items with `status = "pending"`.
+
+### Get One Item
+
+```http
+GET /api/items/{id}
+Authorization: Bearer <token>
+```
+
+Returns one item by id.
+
+### Mark Item Processed
+
+```http
+POST /api/items/{id}/processed
+Authorization: Bearer <token>
+```
+
+Sets `status` to `"processed"` and sets `processed_at`.
+
+Response:
+
+```json
+{
+  "success": true
+}
+```
+
+### Delete Item
+
+```http
+DELETE /api/items/{id}
+Authorization: Bearer <token>
+```
+
+Response:
+
+```json
+{
+  "success": true
+}
+```
+
+### Legacy Create Task
 
 ```http
 POST /api/tasks

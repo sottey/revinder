@@ -45,15 +45,21 @@ exports.handler = async function handler(event) {
     const dueAt = buildDueAt(dueDate, dueTime);
     const tags = parseTags(slotValue(slots.Tags));
 
-    await createTask({
-      revinder_bridge_id: request.requestId,
-      title: taskTitle,
+    await createItem({
+      revinder_id: request.requestId,
       source: "alexa",
+      type: "task",
+      text: taskTitle,
+      title: taskTitle,
       list_name: DEFAULT_LIST_NAME,
       due_at: dueAt,
-      all_day: Boolean(dueDate && !dueTime),
       notes: null,
-      tags
+      tags,
+      metadata: {
+        due_date: dueDate || null,
+        due_time: dueTime || null,
+        all_day: Boolean(dueDate && !dueTime)
+      }
     });
 
     return alexaResponse("Added.", true);
@@ -148,10 +154,10 @@ function timeZoneOffset(dateValue, timeValue) {
   return `${sign}${hours}:${minutes}`;
 }
 
-async function createTask(payload) {
+async function createItem(payload) {
   const baseUrl = requiredEnv("REVINDER_BRIDGE_BASE_URL").replace(/\/+$/, "");
   const token = requiredEnv("REVINDER_BRIDGE_TOKEN");
-  const response = await fetch(`${baseUrl}/api/tasks`, {
+  const response = await fetch(`${baseUrl}/api/items`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,

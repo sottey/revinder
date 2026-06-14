@@ -36,3 +36,40 @@ type CreateTaskResponse struct {
 type SuccessResponse struct {
 	Success bool `json:"success"`
 }
+
+type Item struct {
+	ID          int64          `json:"id"`
+	RevinderID  string         `json:"revinder_id,omitempty"`
+	Source      string         `json:"source"`
+	Type        string         `json:"type"`
+	Text        string         `json:"text"`
+	Title       string         `json:"title"`
+	Notes       *string        `json:"notes"`
+	DueAt       *time.Time     `json:"due_at"`
+	Priority    *string        `json:"priority"`
+	ListName    string         `json:"list_name"`
+	Tags        []string       `json:"tags"`
+	Metadata    map[string]any `json:"metadata"`
+	Status      string         `json:"status"`
+	CreatedAt   time.Time      `json:"created_at"`
+	ProcessedAt *time.Time     `json:"processed_at,omitempty"`
+}
+
+type CreateItemRequest struct {
+	RevinderID string         `json:"revinder_id"`
+	Source     string         `json:"source"`
+	Type       string         `json:"type"`
+	Text       string         `json:"text"`
+	Title      string         `json:"title"`
+	Notes      *string        `json:"notes"`
+	DueAt      *time.Time     `json:"due_at"`
+	Priority   *string        `json:"priority"`
+	ListName   string         `json:"list_name"`
+	Tags       []string       `json:"tags"`
+	Metadata   map[string]any `json:"metadata"`
+}
+
+type CreateItemResponse struct {
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
+}

@@ -1,6 +1,6 @@
 # revinder Alexa Skill
 
-Custom Alexa Skill for creating tasks in `revinder_bridge`.
+Custom Alexa Skill for creating captured items in `revinder_bridge`.
 
 ## Required Lambda Environment
 
@@ -22,18 +22,23 @@ Alexa, use revinder to add a task do that one thing with tags home and cottage
 
 ## Bridge Payload
 
-The Lambda posts to `POST /api/tasks`:
+The Lambda posts to `POST /api/items`:
 
 ```json
 {
-  "revinder_bridge_id": "<Alexa request id>",
-  "title": "do that one thing",
+  "revinder_id": "<Alexa request id>",
   "source": "alexa",
+  "type": "task",
+  "text": "do that one thing",
+  "title": "do that one thing",
   "list_name": "Home",
   "due_at": "2026-06-16T20:00:00-07:00",
-  "all_day": false,
   "notes": null,
-  "tags": ["home", "cottage"]
+  "tags": ["home", "cottage"],
+  "metadata": {
+    "due_date": "2026-06-16",
+    "due_time": "20:00",
+    "all_day": false
+  }
 }
 ```
-

@@ -1,19 +1,19 @@
 # revinder
 
-`revinder` is a small framework for capturing tasks through Alexa and syncing them into Apple Reminders.
+`revinder` is a small framework for capturing natural-language voice input through Alexa and exposing it as structured items for downstream consumers.
 
 The ecosystem is split into separate components:
 
 | Component | Path | Purpose |
 | --- | --- | --- |
-| `revinder_bridge` | `./revinder_bridge` | Self-hosted Go API and SQLite task queue. |
-| `revinder_alexa_skill` | `./revinder_alexa_skill` | Alexa Skill and Lambda backend that creates bridge tasks. |
+| `revinder_bridge` | `./revinder_bridge` | Self-hosted Go API and SQLite capture store. |
+| `revinder_alexa_skill` | `./revinder_alexa_skill` | Alexa Skill and Lambda backend that creates bridge items. |
 
 Planned components:
 
 | Component | Path | Purpose |
 | --- | --- | --- |
-| `revinder_sync` | Not created yet | Local Mac service that reads pending bridge tasks, creates Apple Reminders, then marks tasks synced. |
+| `revinder_sync` | Not created yet | Local Mac service that reads pending bridge items, creates Apple Reminders for task items, then marks items processed. |
 | `revinder_ops` | Not created yet | Optional deployment/runtime notes, scripts, or service definitions for running the framework. |
 
 ## Flow
@@ -23,21 +23,27 @@ Alexa Skill: revinder
     -> AWS Lambda
     -> Cloudflare Tunnel
     -> revinder_bridge
-    -> SQLite pending tasks
+    -> SQLite pending items
     -> Apple Reminders sync service
     -> Apple Reminders
 ```
 
-The Alexa Skill creates tasks in `revinder_bridge`. A separate sync service reads pending tasks from the bridge, creates Apple Reminders, then marks those tasks as synced.
+The Alexa Skill creates generic items in `revinder_bridge`. A separate sync service reads pending task items from the bridge, creates Apple Reminders, then marks those items as processed.
 
 ## Current Components
 
 ## revinder_bridge
 
-`revinder_bridge` is the central task queue.
+`revinder_bridge` is the central capture store.
 
 It provides:
 
+- `POST /api/items`
+- `GET /api/items`
+- `GET /api/items/pending`
+- `GET /api/items/{id}`
+- `POST /api/items/{id}/processed`
+- `DELETE /api/items/{id}`
 - `POST /api/tasks`
 - `GET /api/tasks/pending`
 - `GET /api/tasks/synced`
@@ -81,18 +87,24 @@ Example utterance:
 Alexa, use revinder to add a task on Tuesday at 8pm do that one thing with tags home and cottage
 ```
 
-The Lambda sends this shape to `revinder_bridge`:
+The Lambda sends this item shape to `revinder_bridge`:
 
 ```json
 {
-  "revinder_bridge_id": "<Alexa request id>",
-  "title": "do that one thing",
+  "revinder_id": "<Alexa request id>",
   "source": "alexa",
+  "type": "task",
+  "text": "do that one thing",
+  "title": "do that one thing",
   "list_name": "Home",
   "due_at": "2026-06-16T20:00:00-07:00",
-  "all_day": false,
   "notes": null,
-  "tags": ["home", "cottage"]
+  "tags": ["home", "cottage"],
+  "metadata": {
+    "due_date": "2026-06-16",
+    "due_time": "20:00",
+    "all_day": false
+  }
 }
 ```
 
@@ -117,25 +129,25 @@ DEFAULT_TIME_ZONE=America/Los_Angeles
 
 ### revinder_sync
 
-`revinder_sync` will be the Apple Reminders sync worker.
+`revinder_sync` will be the Apple Reminders sync worker and first downstream consumer.
 
 Expected responsibilities:
 
 - Run on a Mac with access to Apple Reminders.
-- Poll `revinder_bridge` for pending tasks.
-- Create reminders in the configured Apple Reminders list.
+- Poll `revinder_bridge` for pending task items.
+- Create reminders in the configured Apple Reminders list for items where `type = "task"`.
 - Preserve task fields where Apple Reminders supports them:
   - title
   - due date/time
   - notes
   - tags, if supported by the sync implementation
-- Mark successfully created bridge tasks as synced.
+- Mark successfully created bridge items as processed.
 
 Expected bridge calls:
 
 ```http
-GET /api/tasks/pending
-POST /api/tasks/{id}/synced
+GET /api/items/pending
+POST /api/items/{id}/processed
 ```
 
 Failure handling is not designed yet.
