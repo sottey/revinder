@@ -1,0 +1,110 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "revinder",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AddTaskIntent",
+          "slots": [
+            {
+              "name": "DueDate",
+              "type": "AMAZON.DATE"
+            },
+            {
+              "name": "DueTime",
+              "type": "AMAZON.TIME"
+            },
+            {
+              "name": "TaskText",
+              "type": "AMAZON.SearchQuery"
+            },
+            {
+              "name": "Tags",
+              "type": "REVINDER_TAGS"
+            }
+          ],
+          "samples": [
+            "add a task {TaskText}",
+            "add task {TaskText}",
+            "add {TaskText}",
+            "add a task {TaskText} with tags {Tags}",
+            "add task {TaskText} with tags {Tags}",
+            "add {TaskText} with tags {Tags}",
+            "add a task on {DueDate} at {DueTime} {TaskText}",
+            "add task on {DueDate} at {DueTime} {TaskText}",
+            "add on {DueDate} at {DueTime} {TaskText}",
+            "add a task on {DueDate} at {DueTime} {TaskText} with tags {Tags}",
+            "add task on {DueDate} at {DueTime} {TaskText} with tags {Tags}",
+            "add on {DueDate} at {DueTime} {TaskText} with tags {Tags}",
+            "add a task on {DueDate} {TaskText}",
+            "add task on {DueDate} {TaskText}",
+            "add on {DueDate} {TaskText}",
+            "add a task on {DueDate} {TaskText} with tags {Tags}",
+            "add task on {DueDate} {TaskText} with tags {Tags}",
+            "add on {DueDate} {TaskText} with tags {Tags}",
+            "add a task at {DueTime} {TaskText}",
+            "add task at {DueTime} {TaskText}",
+            "add at {DueTime} {TaskText}",
+            "add a task at {DueTime} {TaskText} with tags {Tags}",
+            "add task at {DueTime} {TaskText} with tags {Tags}",
+            "add at {DueTime} {TaskText} with tags {Tags}"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "REVINDER_TAGS",
+          "values": [
+            {
+              "name": {
+                "value": "home"
+              }
+            },
+            {
+              "name": {
+                "value": "cottage"
+              }
+            },
+            {
+              "name": {
+                "value": "work"
+              }
+            },
+            {
+              "name": {
+                "value": "errands"
+              }
+            },
+            {
+              "name": {
+                "value": "shopping"
+              }
+            },
+            {
+              "name": {
+                "value": "outside"
+              }
+            },
+            {
+              "name": {
+                "value": "inside"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

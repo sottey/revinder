@@ -30,3 +30,14 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+codex.resume
+.gitignore
+revinder_alexa_skill/lambda.zip
+revinder_bridge/.DS_Store
+revinder_bridge/revinder_bridge
+revinder_bridge/revinder_bridge.sqlite
+revinder_bridge/docs/codex-home-tasks-prompt.md
+revinder_bridge/docs/revinder_bridge.postman_collection.json
+configuration_notes.txt
+revinder_alexa_skill/deployment_steps.md
+revinder_bridge/internal/httpapi/router_test.go

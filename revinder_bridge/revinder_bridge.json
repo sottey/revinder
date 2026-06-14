@@ -1,0 +1,5 @@
+{
+  "bind_address": "*",
+  "port": 9120,
+  "database_path": "revinder_bridge.sqlite"
+}
