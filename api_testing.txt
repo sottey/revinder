@@ -1,0 +1,49 @@
+  BASE_URL="your.url.here:port"
+  TOKEN="your-real-home-tasks-token"
+
+  Health, no auth:
+  curl -i "$BASE_URL/health"
+
+  Create generic item:
+  curl -i "$BASE_URL/api/items" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "revinder_id": "curl-test-1",
+      "source": "manual",
+      "type": "task",
+      "text": "on Tuesday at 8pm do that one thing",
+      "title": "do that one thing",
+      "notes": null,
+      "due_at": "2026-06-16T20:00:00-07:00",
+      "priority": null,
+      "list_name": "Home",
+      "tags": ["home", "cottage"],
+      "metadata": {
+        "due_date": "2026-06-16",
+        "due_time": "20:00",
+        "all_day": false
+      }
+    }'
+
+  Get all items:
+  curl -i "$BASE_URL/api/items" \
+    -H "Authorization: Bearer $TOKEN"
+
+  Get pending items:
+  curl -i "$BASE_URL/api/items/pending" \
+    -H "Authorization: Bearer $TOKEN"
+
+  Get one item:
+  curl -i "$BASE_URL/api/items/1" \
+    -H "Authorization: Bearer $TOKEN"
+
+  Mark item processed:
+  curl -i -X POST "$BASE_URL/api/items/1/processed" \
+    -H "Authorization: Bearer $TOKEN"
+
+  Delete item:
+  curl -i -X DELETE "$BASE_URL/api/items/1" \
+    -H "Authorization: Bearer $TOKEN"
+
+  Duplicate prevention test: run the create command twice with the same revinder_id; the second response should return the same id.

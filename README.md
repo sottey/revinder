@@ -84,7 +84,7 @@ Example local config:
 Example utterance:
 
 ```text
-Alexa, use revinder to add a task on Tuesday at 8pm do that one thing with tags home and cottage
+Alexa, ask revinder bridge to add a task on Tuesday at 8pm do that one thing with tags home and cottage
 ```
 
 The Lambda sends this item shape to `revinder_bridge`:

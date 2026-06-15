@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:9120"
+      "value": "https://revinder2.sco.li"
     },
     {
       "key": "token",
