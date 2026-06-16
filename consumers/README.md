@@ -97,6 +97,6 @@ REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_memory_consumer --memor
 From the repository root:
 
 ```bash
-./test-all.sh
-./build-all.sh
+./scripts/test-all.sh
+./scripts/build-all.sh
 ```

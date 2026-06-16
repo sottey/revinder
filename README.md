@@ -93,6 +93,8 @@ Example utterance:
 ```text
 Alexa, ask revinder bridge to add a task on Tuesday at 8pm do that one thing with tags home and cottage
 Alexa, tell revinder bridge that my dog's name is Minnie
+Alexa, ask revinder bridge if there are unprocessed items
+Alexa, ask revinder bridge if there are any failed items
 ```
 
 The Lambda sends this item shape to `revinder_bridge`:

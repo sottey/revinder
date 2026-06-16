@@ -19,6 +19,8 @@ Alexa, ask revinder bridge to add a task on Tuesday at 8pm do that one thing wit
 Alexa, ask revinder bridge to add a task do that one thing
 Alexa, ask revinder bridge to add a task do that one thing with tags home and cottage
 Alexa, tell revinder bridge that my dog's name is Minnie
+Alexa, ask revinder bridge if there are unprocessed items
+Alexa, ask revinder bridge if there are any failed items
 ```
 
 ## Bridge Payload

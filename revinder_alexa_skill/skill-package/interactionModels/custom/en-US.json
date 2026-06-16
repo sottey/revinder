@@ -77,6 +77,23 @@
             "make a note that {MemoryText}",
             "note that {MemoryText}"
           ]
+        },
+        {
+          "name": "ItemStatusIntent",
+          "slots": [
+            {
+              "name": "StatusType",
+              "type": "REVINDER_ITEM_STATUS"
+            }
+          ],
+          "samples": [
+            "if there are {StatusType} items",
+            "if there are any {StatusType} items",
+            "are there {StatusType} items",
+            "are there any {StatusType} items",
+            "check for {StatusType} items",
+            "check {StatusType} items"
+          ]
         }
       ],
       "types": [
@@ -116,6 +133,24 @@
             {
               "name": {
                 "value": "inside"
+              }
+            }
+          ]
+        },
+        {
+          "name": "REVINDER_ITEM_STATUS",
+          "values": [
+            {
+              "name": {
+                "value": "unprocessed",
+                "synonyms": [
+                  "pending"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "failed"
               }
             }
           ]

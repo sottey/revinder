@@ -4,6 +4,9 @@
   "private": true,
   "description": "Alexa Skill backend for revinder.",
   "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
   "engines": {
     "node": ">=18"
   }

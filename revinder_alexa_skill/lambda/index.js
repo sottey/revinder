@@ -37,44 +37,48 @@ exports.handler = async function handler(event) {
       return handleRemember(request);
     }
 
+    if (intentName === "ItemStatusIntent") {
+      return handleItemStatus(request);
+    }
+
     return alexaResponse("I could not handle that request.", true);
   } catch (error) {
     console.error(error);
-    return alexaResponse("I could not add that.", true);
+    return alexaResponse("I could not handle that request.", true);
   }
 };
 
 async function handleAddTask(request) {
-    const slots = request.intent.slots || {};
-    const taskTitle = slotValue(slots.TaskText);
+  const slots = request.intent.slots || {};
+  const taskTitle = slotValue(slots.TaskText);
 
-    if (!taskTitle) {
-      return alexaResponse("I did not hear the task.", false, "What task should I add?");
+  if (!taskTitle) {
+    return alexaResponse("I did not hear the task.", false, "What task should I add?");
+  }
+
+  const dueDate = slotValue(slots.DueDate);
+  const dueTime = slotValue(slots.DueTime);
+  const dueAt = buildDueAt(dueDate, dueTime);
+  const tags = parseTags(slotValue(slots.Tags));
+
+  await createItem({
+    revinder_id: request.requestId,
+    source: "alexa",
+    type: "task",
+    text: taskTitle,
+    title: taskTitle,
+    list_name: DEFAULT_LIST_NAME,
+    due_at: dueAt,
+    notes: null,
+    tags,
+    metadata: {
+      due_date: dueDate || null,
+      due_time: dueTime || null,
+      all_day: Boolean(dueDate && !dueTime)
     }
+  });
 
-    const dueDate = slotValue(slots.DueDate);
-    const dueTime = slotValue(slots.DueTime);
-    const dueAt = buildDueAt(dueDate, dueTime);
-    const tags = parseTags(slotValue(slots.Tags));
-
-    await createItem({
-      revinder_id: request.requestId,
-      source: "alexa",
-      type: "task",
-      text: taskTitle,
-      title: taskTitle,
-      list_name: DEFAULT_LIST_NAME,
-      due_at: dueAt,
-      notes: null,
-      tags,
-      metadata: {
-        due_date: dueDate || null,
-        due_time: dueTime || null,
-        all_day: Boolean(dueDate && !dueTime)
-      }
-    });
-
-    return alexaResponse("Added.", true);
+  return alexaResponse("Added.", true);
 }
 
 async function handleRemember(request) {
@@ -99,6 +103,39 @@ async function handleRemember(request) {
   });
 
   return alexaResponse("Remembered.", true);
+}
+
+async function handleItemStatus(request) {
+  const slots = request.intent.slots || {};
+  const requestedStatus = slotValue(slots.StatusType);
+  const status = itemStatusValue(requestedStatus);
+
+  if (!status) {
+    return alexaResponse("I did not hear which status to check.", false, "Should I check unprocessed or failed items?");
+  }
+
+  const items = await getItemsByStatus(status);
+  const count = items.length;
+  const label = status === "pending" ? "unprocessed" : "failed";
+
+  if (count === 0) {
+    return alexaResponse(`There are no ${label} items.`, true);
+  }
+  if (count === 1) {
+    return alexaResponse(`There is 1 ${label} item.`, true);
+  }
+  return alexaResponse(`There are ${count} ${label} items.`, true);
+}
+
+function itemStatusValue(value) {
+  const normalized = value.toLowerCase();
+  if (normalized === "unprocessed" || normalized === "pending") {
+    return "pending";
+  }
+  if (normalized === "failed") {
+    return "failed";
+  }
+  return "";
 }
 
 function alexaResponse(text, shouldEndSession, repromptText) {
@@ -206,6 +243,24 @@ async function createItem(payload) {
   return response.json();
 }
 
+async function getItemsByStatus(status) {
+  const baseUrl = requiredEnv("REVINDER_BRIDGE_BASE_URL").replace(/\/+$/, "");
+  const token = requiredEnv("REVINDER_BRIDGE_TOKEN");
+  const response = await fetch(`${baseUrl}/api/items?status=${encodeURIComponent(status)}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`revinder_bridge returned ${response.status}: ${body}`);
+  }
+
+  return response.json();
+}
+
 function requiredEnv(name) {
   const value = process.env[name];
   if (!value) {
@@ -213,3 +268,7 @@ function requiredEnv(name) {
   }
   return value;
 }
+
+exports._test = {
+  itemStatusValue
+};

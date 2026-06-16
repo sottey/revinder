@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "Testing revinder_bridge..."
 (
@@ -19,6 +19,12 @@ echo "Testing revinder_memory_consumer..."
 (
   cd "$ROOT_DIR/consumers/revinder_memory_consumer"
   go test -v ./...
+)
+
+echo "Testing revinder_alexa_skill Lambda..."
+(
+  cd "$ROOT_DIR/revinder_alexa_skill/lambda"
+  npm test
 )
 
 echo "Tests complete."
