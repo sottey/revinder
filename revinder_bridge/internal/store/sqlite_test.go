@@ -222,6 +222,41 @@ func TestStoreCreatesItemAndReturnsPendingItems(t *testing.T) {
 	}
 }
 
+func TestStoreItemsFiltersByStatusAndType(t *testing.T) {
+	db := openTestStore(t)
+
+	if _, err := db.CreateItem(models.CreateItemRequest{
+		Source: "alexa",
+		Type:   "task",
+		Text:   "replace air filter",
+		Title:  "replace air filter",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.CreateItem(models.CreateItemRequest{
+		Source: "alexa",
+		Type:   "memory",
+		Text:   "my dog's name is Minnie",
+		Title:  "my dog's name is Minnie",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	items, err := db.Items("pending", "memory")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("len(items) = %d, want 1", len(items))
+	}
+	if items[0].Type != "memory" {
+		t.Fatalf("Type = %q, want memory", items[0].Type)
+	}
+	if items[0].Text != "my dog's name is Minnie" {
+		t.Fatalf("Text = %q, want memory text", items[0].Text)
+	}
+}
+
 func TestStoreCreateItemReturnsExistingItemForDuplicateRevinderID(t *testing.T) {
 	db := openTestStore(t)
 
@@ -307,6 +342,50 @@ func TestStoreMarkItemProcessedRemovesItemFromPending(t *testing.T) {
 	}
 	if item.ProcessedAt == nil {
 		t.Fatal("ProcessedAt = nil, want timestamp")
+	}
+}
+
+func TestStoreMarkItemFailedRemovesItemFromPending(t *testing.T) {
+	db := openTestStore(t)
+
+	resp, err := db.CreateItem(models.CreateItemRequest{
+		Source: "alexa",
+		Type:   "task",
+		Text:   "replace air filter",
+		Title:  "replace air filter",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := db.MarkItemFailed(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !updated {
+		t.Fatal("updated = false, want true")
+	}
+
+	items, err := db.PendingItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("len(items) = %d, want %d", len(items), 0)
+	}
+
+	item, found, err := db.GetItem(resp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Fatal("found = false, want true")
+	}
+	if item.Status != "failed" {
+		t.Fatalf("Status = %q, want %q", item.Status, "failed")
+	}
+	if item.ProcessedAt != nil {
+		t.Fatalf("ProcessedAt = %v, want nil", item.ProcessedAt)
 	}
 }
 

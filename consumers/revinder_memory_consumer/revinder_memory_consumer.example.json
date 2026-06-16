@@ -1,0 +1,6 @@
+{
+  "bridge_url": "http://127.0.0.1:9120",
+  "token": "YOUR_TOKEN_HERE",
+  "memory_file": "revinder_memory.jsonl",
+  "interval_seconds": 30
+}

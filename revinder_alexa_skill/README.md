@@ -18,6 +18,7 @@ DEFAULT_TIME_ZONE=America/Los_Angeles
 Alexa, ask revinder bridge to add a task on Tuesday at 8pm do that one thing with tags home and cottage
 Alexa, ask revinder bridge to add a task do that one thing
 Alexa, ask revinder bridge to add a task do that one thing with tags home and cottage
+Alexa, tell revinder bridge that my dog's name is Minnie
 ```
 
 ## Bridge Payload

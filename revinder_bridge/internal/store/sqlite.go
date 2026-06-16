@@ -183,18 +183,25 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
 	}, nil
 }
 
-func (s *Store) Items(status string) ([]models.Item, error) {
+func (s *Store) Items(status string, itemType string) ([]models.Item, error) {
 	query := `
 SELECT id, revinder_id, source, type, text, title, notes, due_at, priority, list_name, tags, metadata, status, created_at, processed_at
 FROM items
 `
 	var rows *sql.Rows
 	var err error
-	if status == "" {
+	switch {
+	case status == "" && itemType == "":
 		rows, err = s.db.Query(query + `ORDER BY id`)
-	} else {
+	case status != "" && itemType == "":
 		rows, err = s.db.Query(query+`WHERE status = ?
 ORDER BY id`, status)
+	case status == "" && itemType != "":
+		rows, err = s.db.Query(query+`WHERE type = ?
+ORDER BY id`, itemType)
+	default:
+		rows, err = s.db.Query(query+`WHERE status = ? AND type = ?
+ORDER BY id`, status, itemType)
 	}
 	if err != nil {
 		return nil, err
@@ -217,7 +224,7 @@ ORDER BY id`, status)
 }
 
 func (s *Store) PendingItems() ([]models.Item, error) {
-	return s.Items("pending")
+	return s.Items("pending", "")
 }
 
 func (s *Store) GetItem(id int64) (models.Item, bool, error) {
@@ -244,6 +251,24 @@ UPDATE items
 SET status = 'processed', processed_at = ?
 WHERE id = ?
 `, time.Now().Format(time.RFC3339Nano), id)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+
+func (s *Store) MarkItemFailed(id int64) (bool, error) {
+	result, err := s.db.Exec(`
+UPDATE items
+SET status = 'failed'
+WHERE id = ?
+`, id)
 	if err != nil {
 		return false, err
 	}

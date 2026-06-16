@@ -40,6 +40,7 @@ func TestProtectedEndpointRequiresAuth(t *testing.T) {
 		{http.MethodGet, "/api/items/pending"},
 		{http.MethodGet, "/api/items/1"},
 		{http.MethodPost, "/api/items/1/processed"},
+		{http.MethodPost, "/api/items/1/failed"},
 		{http.MethodDelete, "/api/items/1"},
 		{http.MethodPost, "/api/tasks"},
 		{http.MethodGet, "/api/tasks/pending"},
@@ -387,6 +388,16 @@ func TestItemLifecycle(t *testing.T) {
 		t.Fatalf("processed status = %d, want %d", processedRec.Code, http.StatusOK)
 	}
 	assertJSONBody(t, processedRec.Body.Bytes(), models.SuccessResponse{Success: true})
+
+	failedReq := authorizedRequest(http.MethodPost, "/api/items/1/failed", nil)
+	failedRec := httptest.NewRecorder()
+
+	router.ServeHTTP(failedRec, failedReq)
+
+	if failedRec.Code != http.StatusOK {
+		t.Fatalf("failed status = %d, want %d", failedRec.Code, http.StatusOK)
+	}
+	assertJSONBody(t, failedRec.Body.Bytes(), models.SuccessResponse{Success: true})
 
 	emptyPendingReq := authorizedRequest(http.MethodGet, "/api/items/pending", nil)
 	emptyPendingRec := httptest.NewRecorder()

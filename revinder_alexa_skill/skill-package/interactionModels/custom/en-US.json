@@ -61,6 +61,22 @@
             "add task at {DueTime} {TaskText} with tags {Tags}",
             "add at {DueTime} {TaskText} with tags {Tags}"
           ]
+        },
+        {
+          "name": "RememberIntent",
+          "slots": [
+            {
+              "name": "MemoryText",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "that {MemoryText}",
+            "remember that {MemoryText}",
+            "remember {MemoryText}",
+            "make a note that {MemoryText}",
+            "note that {MemoryText}"
+          ]
         }
       ],
       "types": [

@@ -144,6 +144,12 @@ Optional status filter:
 GET /api/items?status=pending
 ```
 
+Optional type filter:
+
+```http
+GET /api/items?status=pending&type=memory
+```
+
 ### Get Pending Items
 
 ```http
@@ -170,6 +176,23 @@ Authorization: Bearer <token>
 ```
 
 Sets `status` to `"processed"` and sets `processed_at`.
+
+Response:
+
+```json
+{
+  "success": true
+}
+```
+
+### Mark Item Failed
+
+```http
+POST /api/items/{id}/failed
+Authorization: Bearer <token>
+```
+
+Sets `status` to `"failed"`.
 
 Response:
 

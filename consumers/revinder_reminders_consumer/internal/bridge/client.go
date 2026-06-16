@@ -45,7 +45,7 @@ func NewClient(baseURL string, token string) *Client {
 }
 
 func (c *Client) PendingItems(ctx context.Context) ([]Item, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/items/pending", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/items?status=pending&type=task", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +71,26 @@ func (c *Client) PendingItems(ctx context.Context) ([]Item, error) {
 
 func (c *Client) MarkProcessed(ctx context.Context, id int64) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/api/items/%d/processed", c.baseURL, id), bytes.NewReader(nil))
+	if err != nil {
+		return err
+	}
+	c.authorize(req)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bridge returned %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c *Client) MarkFailed(ctx context.Context, id int64) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/api/items/%d/failed", c.baseURL, id), bytes.NewReader(nil))
 	if err != nil {
 		return err
 	}

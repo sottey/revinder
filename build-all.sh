@@ -12,10 +12,16 @@ echo "Building revinder_bridge..."
   go build -o "$BUILD_DIR/revinder_bridge" .
 )
 
-echo "Building revinder_consumer..."
+echo "Building revinder_reminders_consumer..."
 (
-  cd "$ROOT_DIR/revinder_consumer"
-  go build -o "$BUILD_DIR/revinder_consumer" ./cmd/revinder_consumer
+  cd "$ROOT_DIR/consumers/revinder_reminders_consumer"
+  go build -o "$BUILD_DIR/revinder_reminders_consumer" ./cmd/revinder_reminders_consumer
+)
+
+echo "Building revinder_memory_consumer..."
+(
+  cd "$ROOT_DIR/consumers/revinder_memory_consumer"
+  go build -o "$BUILD_DIR/revinder_memory_consumer" ./cmd/revinder_memory_consumer
 )
 
 echo "Packaging revinder_alexa_skill Lambda..."

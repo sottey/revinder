@@ -32,6 +32,7 @@ func NewRouter(store *store.Store, token string, logger *slog.Logger) http.Handl
 		r.Get("/api/items/pending", h.pendingItems)
 		r.Get("/api/items/{id}", h.getItem)
 		r.Post("/api/items/{id}/processed", h.markItemProcessed)
+		r.Post("/api/items/{id}/failed", h.markItemFailed)
 		r.Delete("/api/items/{id}", h.deleteItem)
 		r.Post("/api/tasks", h.createTask)
 		r.Get("/api/tasks/pending", h.pendingTasks)
@@ -91,7 +92,7 @@ func (h *handler) createItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) items(w http.ResponseWriter, r *http.Request) {
-	items, err := h.store.Items(strings.TrimSpace(r.URL.Query().Get("status")))
+	items, err := h.store.Items(strings.TrimSpace(r.URL.Query().Get("status")), strings.TrimSpace(r.URL.Query().Get("type")))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to get items")
 		return
@@ -140,6 +141,26 @@ func (h *handler) markItemProcessed(w http.ResponseWriter, r *http.Request) {
 	updated, err := h.store.MarkItemProcessed(id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to mark item processed")
+		return
+	}
+	if !updated {
+		writeError(w, http.StatusNotFound, "invalid id")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, models.SuccessResponse{Success: true})
+}
+
+func (h *handler) markItemFailed(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid item id")
+		return
+	}
+
+	updated, err := h.store.MarkItemFailed(id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to mark item failed")
 		return
 	}
 	if !updated {

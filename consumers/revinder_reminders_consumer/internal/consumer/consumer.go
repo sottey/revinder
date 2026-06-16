@@ -5,24 +5,30 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/sottey/revinder_consumer/internal/bridge"
+	"github.com/sottey/revinder/consumers/revinder_reminders_consumer/internal/bridge"
 )
 
-type Target interface {
+type ReminderCreator interface {
 	Process(ctx context.Context, item bridge.Item) error
 }
 
-type Consumer struct {
-	bridge *bridge.Client
-	target Target
-	logger *slog.Logger
+type BridgeClient interface {
+	PendingItems(ctx context.Context) ([]bridge.Item, error)
+	MarkProcessed(ctx context.Context, id int64) error
+	MarkFailed(ctx context.Context, id int64) error
 }
 
-func New(bridgeClient *bridge.Client, target Target, logger *slog.Logger) *Consumer {
+type Consumer struct {
+	bridge          BridgeClient
+	reminderCreator ReminderCreator
+	logger          *slog.Logger
+}
+
+func New(bridgeClient BridgeClient, reminderCreator ReminderCreator, logger *slog.Logger) *Consumer {
 	return &Consumer{
-		bridge: bridgeClient,
-		target: target,
-		logger: logger,
+		bridge:          bridgeClient,
+		reminderCreator: reminderCreator,
+		logger:          logger,
 	}
 }
 
@@ -59,8 +65,11 @@ func (c *Consumer) ProcessOnce(ctx context.Context) error {
 			continue
 		}
 
-		if err := c.target.Process(ctx, item); err != nil {
+		if err := c.reminderCreator.Process(ctx, item); err != nil {
 			c.logger.Error("item_process_failed", "id", item.ID, "error", err)
+			if markErr := c.bridge.MarkFailed(ctx, item.ID); markErr != nil {
+				c.logger.Error("item_mark_failed_failed", "id", item.ID, "error", markErr)
+			}
 			continue
 		}
 

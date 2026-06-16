@@ -1,0 +1,5 @@
+{
+  "bridge_url": "http://192.168.7.215:9120",
+  "token": "YOUR_TOKEN_HERE",
+  "interval_seconds": 30
+}

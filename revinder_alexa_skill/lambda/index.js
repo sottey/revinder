@@ -8,7 +8,7 @@ exports.handler = async function handler(event) {
     const request = event.request || {};
 
     if (request.type === "LaunchRequest") {
-      return alexaResponse("Tell me the task to add.", false, "What task should I add?");
+      return alexaResponse("Tell me the task to add or memory to save.", false, "What should I add?");
     }
 
     if (request.type !== "IntentRequest") {
@@ -19,9 +19,9 @@ exports.handler = async function handler(event) {
 
     if (intentName === "AMAZON.HelpIntent") {
       return alexaResponse(
-        "Say, add a task, then the task. You can include a date, time, and tags.",
+        "Say, add a task, then the task. Or say, that, then the memory to save.",
         false,
-        "What task should I add?"
+        "What should I add?"
       );
     }
 
@@ -29,10 +29,22 @@ exports.handler = async function handler(event) {
       return alexaResponse("Canceled.", true);
     }
 
-    if (intentName !== "AddTaskIntent") {
-      return alexaResponse("I could not handle that request.", true);
+    if (intentName === "AddTaskIntent") {
+      return handleAddTask(request);
     }
 
+    if (intentName === "RememberIntent") {
+      return handleRemember(request);
+    }
+
+    return alexaResponse("I could not handle that request.", true);
+  } catch (error) {
+    console.error(error);
+    return alexaResponse("I could not add that.", true);
+  }
+};
+
+async function handleAddTask(request) {
     const slots = request.intent.slots || {};
     const taskTitle = slotValue(slots.TaskText);
 
@@ -63,11 +75,31 @@ exports.handler = async function handler(event) {
     });
 
     return alexaResponse("Added.", true);
-  } catch (error) {
-    console.error(error);
-    return alexaResponse("I could not add that task.", true);
+}
+
+async function handleRemember(request) {
+  const slots = request.intent.slots || {};
+  const memoryText = slotValue(slots.MemoryText);
+
+  if (!memoryText) {
+    return alexaResponse("I did not hear the memory.", false, "What should I remember?");
   }
-};
+
+  await createItem({
+    revinder_id: request.requestId,
+    source: "alexa",
+    type: "memory",
+    text: memoryText,
+    title: memoryText,
+    list_name: "",
+    due_at: null,
+    notes: null,
+    tags: [],
+    metadata: {}
+  });
+
+  return alexaResponse("Remembered.", true);
+}
 
 function alexaResponse(text, shouldEndSession, repromptText) {
   const response = {
