@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sottey/revinder/consumers/revinder_reminders_consumer/internal/bridge"
+	"github.com/sottey/revinder/consumers/revinder_task_consumer/internal/bridge"
 )
 
 type Creator struct{}

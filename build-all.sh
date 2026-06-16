@@ -12,10 +12,10 @@ echo "Building revinder_bridge..."
   go build -o "$BUILD_DIR/revinder_bridge" .
 )
 
-echo "Building revinder_reminders_consumer..."
+echo "Building revinder_task_consumer..."
 (
-  cd "$ROOT_DIR/consumers/revinder_reminders_consumer"
-  go build -o "$BUILD_DIR/revinder_reminders_consumer" ./cmd/revinder_reminders_consumer
+  cd "$ROOT_DIR/consumers/revinder_task_consumer"
+  go build -o "$BUILD_DIR/revinder_task_consumer" ./cmd/revinder_task_consumer
 )
 
 echo "Building revinder_memory_consumer..."

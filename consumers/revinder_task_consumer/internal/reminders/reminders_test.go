@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sottey/revinder/consumers/revinder_reminders_consumer/internal/bridge"
+	"github.com/sottey/revinder/consumers/revinder_task_consumer/internal/bridge"
 )
 
 func TestBuildScriptIncludesReminderFields(t *testing.T) {

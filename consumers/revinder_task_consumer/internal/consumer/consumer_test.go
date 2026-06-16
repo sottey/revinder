@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/sottey/revinder/consumers/revinder_reminders_consumer/internal/bridge"
+	"github.com/sottey/revinder/consumers/revinder_task_consumer/internal/bridge"
 )
 
 func TestProcessOnceProcessesTasksAndMarksProcessed(t *testing.T) {
@@ -18,18 +18,18 @@ func TestProcessOnceProcessesTasksAndMarksProcessed(t *testing.T) {
 			{ID: 3, Type: "task", Title: "buy filters"},
 		},
 	}
-	creator := &fakeReminderCreator{}
+	processor := &fakeTaskProcessor{}
 
-	c := New(bridgeClient, creator, discardLogger())
+	c := New(bridgeClient, processor, discardLogger())
 	if err := c.ProcessOnce(context.Background()); err != nil {
 		t.Fatalf("ProcessOnce() error = %v", err)
 	}
 
-	if len(creator.items) != 2 {
-		t.Fatalf("processed item count = %d, want 2", len(creator.items))
+	if len(processor.items) != 2 {
+		t.Fatalf("processed item count = %d, want 2", len(processor.items))
 	}
-	if creator.items[0].ID != 1 || creator.items[1].ID != 3 {
-		t.Fatalf("processed item IDs = %v, want [1 3]", itemIDs(creator.items))
+	if processor.items[0].ID != 1 || processor.items[1].ID != 3 {
+		t.Fatalf("processed item IDs = %v, want [1 3]", itemIDs(processor.items))
 	}
 	if len(bridgeClient.marked) != 2 {
 		t.Fatalf("marked item count = %d, want 2", len(bridgeClient.marked))
@@ -44,7 +44,7 @@ func TestProcessOnceProcessesTasksAndMarksProcessed(t *testing.T) {
 
 func TestProcessOnceReturnsPendingItemsError(t *testing.T) {
 	wantErr := errors.New("pending failed")
-	c := New(&fakeBridge{pendingErr: wantErr}, &fakeReminderCreator{}, discardLogger())
+	c := New(&fakeBridge{pendingErr: wantErr}, &fakeTaskProcessor{}, discardLogger())
 
 	err := c.ProcessOnce(context.Background())
 	if !errors.Is(err, wantErr) {
@@ -52,19 +52,19 @@ func TestProcessOnceReturnsPendingItemsError(t *testing.T) {
 	}
 }
 
-func TestProcessOnceMarksFailedReminderFailed(t *testing.T) {
+func TestProcessOnceMarksFailedTaskProcessorFailed(t *testing.T) {
 	bridgeClient := &fakeBridge{
 		items: []bridge.Item{{ID: 1, Type: "task", Title: "replace air filter"}},
 	}
-	creator := &fakeReminderCreator{err: errors.New("reminder failed")}
+	processor := &fakeTaskProcessor{err: errors.New("task failed")}
 
-	c := New(bridgeClient, creator, discardLogger())
+	c := New(bridgeClient, processor, discardLogger())
 	if err := c.ProcessOnce(context.Background()); err != nil {
 		t.Fatalf("ProcessOnce() error = %v", err)
 	}
 
-	if len(creator.items) != 1 {
-		t.Fatalf("processed item count = %d, want 1", len(creator.items))
+	if len(processor.items) != 1 {
+		t.Fatalf("processed item count = %d, want 1", len(processor.items))
 	}
 	if len(bridgeClient.marked) != 0 {
 		t.Fatalf("marked item IDs = %v, want none", bridgeClient.marked)
@@ -84,15 +84,15 @@ func TestProcessOnceContinuesAfterMarkProcessedError(t *testing.T) {
 			1: errors.New("mark failed"),
 		},
 	}
-	creator := &fakeReminderCreator{}
+	processor := &fakeTaskProcessor{}
 
-	c := New(bridgeClient, creator, discardLogger())
+	c := New(bridgeClient, processor, discardLogger())
 	if err := c.ProcessOnce(context.Background()); err != nil {
 		t.Fatalf("ProcessOnce() error = %v", err)
 	}
 
-	if len(creator.items) != 2 {
-		t.Fatalf("processed item count = %d, want 2", len(creator.items))
+	if len(processor.items) != 2 {
+		t.Fatalf("processed item count = %d, want 2", len(processor.items))
 	}
 	if len(bridgeClient.marked) != 2 {
 		t.Fatalf("marked item count = %d, want 2", len(bridgeClient.marked))
@@ -128,12 +128,12 @@ func (f *fakeBridge) MarkFailed(ctx context.Context, id int64) error {
 	return f.failErrs[id]
 }
 
-type fakeReminderCreator struct {
+type fakeTaskProcessor struct {
 	items []bridge.Item
 	err   error
 }
 
-func (f *fakeReminderCreator) Process(ctx context.Context, item bridge.Item) error {
+func (f *fakeTaskProcessor) Process(ctx context.Context, item bridge.Item) error {
 	f.items = append(f.items, item)
 	return f.err
 }

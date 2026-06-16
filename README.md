@@ -8,7 +8,7 @@ The ecosystem is split into separate components:
 | --- | --- | --- |
 | `revinder_bridge` | `./revinder_bridge` | Self-hosted Go API and SQLite capture store. |
 | `revinder_alexa_skill` | `./revinder_alexa_skill` | Alexa Skill and Lambda backend that creates bridge items. |
-| `revinder_reminders_consumer` | `./consumers/revinder_reminders_consumer` | Local Mac consumer that reads pending bridge items, creates Apple Reminders for task items, then marks items processed. |
+| `revinder_task_consumer` | `./consumers/revinder_task_consumer` | Local consumer that reads pending task items and sends them to the configured task target. |
 | `revinder_memory_consumer` | `./consumers/revinder_memory_consumer` | Local consumer that writes memory items to a configured JSONL file, then marks items processed. |
 
 Planned components:
@@ -25,7 +25,7 @@ Alexa Skill: revinder
     -> Cloudflare Tunnel
     -> revinder_bridge
     -> SQLite pending items
-    -> revinder_reminders_consumer
+    -> revinder_task_consumer
     -> Apple Reminders
 
 revinder_bridge
@@ -34,7 +34,7 @@ revinder_bridge
     -> JSONL memory file
 ```
 
-The Alexa Skill creates generic items in `revinder_bridge`. `revinder_reminders_consumer` reads pending task items from the bridge, creates Apple Reminders, then marks those items as processed. `revinder_memory_consumer` reads pending memory items from the bridge, writes them to a configured JSONL file, then marks those items as processed.
+The Alexa Skill creates generic items in `revinder_bridge`. `revinder_task_consumer` reads pending task items from the bridge, sends them to the configured task target, then marks those items as processed. `revinder_memory_consumer` reads pending memory items from the bridge, writes them to a configured JSONL file, then marks those items as processed.
 
 ## Current Components
 
@@ -133,21 +133,23 @@ DEFAULT_TIME_ZONE=America/Los_Angeles
 
 `DEFAULT_TIME_ZONE` is optional.
 
-## revinder_reminders_consumer
+## revinder_task_consumer
 
-`revinder_reminders_consumer` is the Apple Reminders sync worker and first downstream consumer.
+`revinder_task_consumer` handles task items and sends them to the configured target.
 
 Responsibilities:
 
-- Run on a Mac with access to Apple Reminders.
 - Poll `revinder_bridge` for pending task items.
-- Create reminders in the configured Apple Reminders list for items where `type = "task"`.
-- Preserve task fields where Apple Reminders supports them:
+- Process items where `type = "task"`.
+- Support a `reminders` target for Apple Reminders.
+- Support a `jsonl` target for file-based task capture.
+- Preserve task fields where the configured target supports them:
   - title
   - due date/time
   - notes
   - tags, if supported by the sync implementation
-- Mark successfully created bridge items as processed.
+- Mark successfully handled bridge items as processed.
+- Mark target failures as failed.
 
 Bridge calls:
 
@@ -160,27 +162,33 @@ POST /api/items/{id}/failed
 Build and test:
 
 ```bash
-cd consumers/revinder_reminders_consumer
+cd consumers/revinder_task_consumer
 go test ./...
-go build -o revinder_reminders_consumer ./cmd/revinder_reminders_consumer
+go build -o revinder_task_consumer ./cmd/revinder_task_consumer
 ```
 
 Run once:
 
 ```bash
-REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_reminders_consumer --once
+REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_task_consumer --once
+```
+
+Run once with the JSONL target:
+
+```bash
+REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_task_consumer --target jsonl --jsonl-path ./revinder_tasks.jsonl --once
 ```
 
 Run continuously:
 
 ```bash
-REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_reminders_consumer
+REVINDER_BRIDGE_TOKEN=some-long-random-secret ./revinder_task_consumer
 ```
 
 Configuration can also be loaded from a JSON config file:
 
 ```bash
-./revinder_reminders_consumer --config revinder_reminders_consumer.example.json
+./revinder_task_consumer --config revinder_task_consumer.example.json
 ```
 
 ## revinder_memory_consumer
@@ -265,6 +273,6 @@ Local runtime files are intentionally ignored:
 - `revinder_alexa_skill/lambda.zip`
 - `revinder_bridge/revinder_bridge`
 - `revinder_bridge/revinder_bridge.sqlite`
-- `consumers/revinder_reminders_consumer/revinder_reminders_consumer`
+- `consumers/revinder_task_consumer/revinder_task_consumer`
 - `consumers/revinder_memory_consumer/revinder_memory_consumer`
 - `.DS_Store`

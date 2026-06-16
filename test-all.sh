@@ -9,9 +9,9 @@ echo "Testing revinder_bridge..."
   go test -v ./...
 )
 
-echo "Testing revinder_reminders_consumer..."
+echo "Testing revinder_task_consumer..."
 (
-  cd "$ROOT_DIR/consumers/revinder_reminders_consumer"
+  cd "$ROOT_DIR/consumers/revinder_task_consumer"
   go test -v ./...
 )
 

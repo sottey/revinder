@@ -1,0 +1,9 @@
+{
+  "bridge_url": "http://127.0.0.1:9120",
+  "token": "YOUR_TOKEN_HERE",
+  "target": "reminders",
+  "jsonl": {
+    "path": "revinder_tasks.jsonl"
+  },
+  "interval_seconds": 30
+}
